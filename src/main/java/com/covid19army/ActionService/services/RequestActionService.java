@@ -58,7 +58,7 @@ public class RequestActionService {
 		if(requestaction.isPresent()) {
 			var requestactionmodel = requestaction.get();
 			var authuserid = Long.parseLong(_requestExtension.getAuthenticatedUser());
-			var owner = _helpRequestServiceClient.getHelpRequestOwner(requestId);
+			var owner = _helpRequestServiceClient.getHelpRequestOwner(authuserid, requestId);
 			if(owner != authuserid && !_requestActionRepository.existsByRequestidAndUserid(requestId, authuserid))
 				throw new NotAuthorizedException();
 			var responseDto = _modelMapper.map(requestactionmodel, RequestActionResponseDto.class);
@@ -82,22 +82,22 @@ public class RequestActionService {
 		
 		//TODO: validate if requestid belongs to auth user
 		var authuserid = Long.parseLong(_requestExtension.getAuthenticatedUser());
-		var owner = _helpRequestServiceClient.getHelpRequestOwner(requestId);
+		var owner = _helpRequestServiceClient.getHelpRequestOwner(authuserid, requestId);
 		
 		if(owner != authuserid && !_requestActionRepository.existsByRequestidAndUserid(requestId, authuserid))
 			throw new NotAuthorizedException();
 		
 		var page = _requestActionRepository.findByRequestid(requestId, pageable);
-		var pageStream = page.getContent().stream();
 		
-		var volunteerIds = pageStream.map(RequestAction::getVolunteerid)
+		
+		var volunteerIds = page.getContent().stream().map(RequestAction::getVolunteerid)
 				.distinct().collect(Collectors.toList());
 		
 		var volunteerList = _VolunteerServiceClient.searchByVolunteerId(volunteerIds);		
 		Function<Long, VolunteerResponseDto>  filterVolunteerById = (volunteerid) -> volunteerList.stream()
 				.filter(x->x.getVolunteerid() == volunteerid).findFirst().get();
 						
-		var dto = pageStream				
+		var dto = page.getContent().stream()				
 				.map(a->_modelMapper.map(a, RequestActionResponseDto.class))
 				.map(d -> {
 					var v = filterVolunteerById.apply(d.getVolunteerid());

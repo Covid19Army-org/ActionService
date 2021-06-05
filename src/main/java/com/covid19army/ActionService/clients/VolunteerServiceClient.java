@@ -10,7 +10,7 @@ import com.covid19army.ActionService.dtos.VolunteerResponseDto;
 
 
 
-@FeignClient(name="VolunteerService", url = "${app.client.tokenservice.url:}")
+@FeignClient(name="VolunteerService", url = "${app.client.volunteerservice.url:}")
 public interface VolunteerServiceClient {
 
 	@PostMapping("/volunteer/searchbyids")

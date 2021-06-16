@@ -43,9 +43,32 @@ public class RequestActionService {
 	@Autowired
 	HelpRequestServiceClient _helpRequestServiceClient;
 	
-	public long createRequestAction(RequestActionDto requestActionDto) {
+	//only volunteer can add action
+	public long createRequestAction(RequestActionDto requestActionDto) 
+			throws NotAuthorizedException, ResourceNotFoundException {
+		var authuserid = Long.parseLong(_requestExtension.getAuthenticatedUser());
 		var newModel = _modelMapper.map(requestActionDto, RequestAction.class);
-		newModel.setUserid(Long.parseLong(_requestExtension.getAuthenticatedUser()));
+		
+		List<Long> volunteerId = new ArrayList<>();
+		volunteerId.add(authuserid);
+		
+		var volunteerList = _VolunteerServiceClient.searchByVolunteerId(volunteerId);
+		VolunteerResponseDto volunteer = null;
+		if(volunteerList.size() > 0) {
+			volunteer = volunteerList.get(0);			
+		}
+		
+		boolean isActiveVolunteer = _helpRequestServiceClient.isActiveVolunteer(authuserid,requestActionDto.getRequestid(),  authuserid);
+		
+		if(volunteer == null || !isActiveVolunteer)
+			throw new NotAuthorizedException();
+		
+		boolean isValidHelpRequest = _helpRequestServiceClient.isValidHelpRequest(authuserid, requestActionDto.getRequestid());
+		
+		if(!isValidHelpRequest)
+			throw new ResourceNotFoundException("Invalid help request.");
+		
+		newModel.setUserid(authuserid);
 		_requestActionRepository.save(newModel);
 		return newModel.getRequestionactionid();
 	}

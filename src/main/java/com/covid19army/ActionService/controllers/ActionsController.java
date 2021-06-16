@@ -26,8 +26,13 @@ public class ActionsController {
 	@Autowired
 	RequestActionService _actionService;
 	
+	@GetMapping("/health")
+	public String health() {
+		return "am running!";
+	}
+	
 	@PostMapping
-	public long createAction(@RequestBody RequestActionDto actionDto) {
+	public long createAction(@RequestBody RequestActionDto actionDto) throws NotAuthorizedException, ResourceNotFoundException {
 		return _actionService.createRequestAction(actionDto);				
 	}
 	
